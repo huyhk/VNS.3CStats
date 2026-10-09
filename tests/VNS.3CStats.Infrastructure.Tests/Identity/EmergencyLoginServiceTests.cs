@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using VNS.ThreeCStats.Infrastructure.Identity;
+using Xunit;
 
 namespace VNS.ThreeCStats.Infrastructure.Tests.Identity;
 
