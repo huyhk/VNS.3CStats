@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +10,8 @@ namespace VNS.ThreeCStats.Infrastructure;
 
 public static class DependencyInjection
 {
+    public const string EmergencyCookieScheme = "EmergencyLoginCookie";
+
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -34,6 +37,16 @@ public static class DependencyInjection
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
+
+        services.AddAuthentication()
+            .AddCookie(EmergencyCookieScheme, options =>
+            {
+                options.Cookie.Name = ".VNS.3CStats.Emergency";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+                options.SlidingExpiration = false;
+            });
 
         return services;
     }
