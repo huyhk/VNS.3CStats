@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../VNS.3CStats.Domain/VNS.3CStats.Domain.csproj" />
+  </ItemGroup>
+</Project>
