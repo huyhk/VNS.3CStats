@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="../VNS.3CStats.Application/VNS.3CStats.Application.csproj" />
+    <ProjectReference Include="../VNS.3CStats.Infrastructure/VNS.3CStats.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
