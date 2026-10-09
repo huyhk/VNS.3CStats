@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VNS.3CStats.Domain/VNS.3CStats.Domain.csproj" />
+    <Project Path="src/VNS.3CStats.Application/VNS.3CStats.Application.csproj" />
+    <Project Path="src/VNS.3CStats.Infrastructure/VNS.3CStats.Infrastructure.csproj" />
+    <Project Path="src/VNS.3CStats.Web/VNS.3CStats.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VNS.3CStats.Domain.Tests/VNS.3CStats.Domain.Tests.csproj" />
+    <Project Path="tests/VNS.3CStats.Application.Tests/VNS.3CStats.Application.Tests.csproj" />
+    <Project Path="tests/VNS.3CStats.Infrastructure.Tests/VNS.3CStats.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>
