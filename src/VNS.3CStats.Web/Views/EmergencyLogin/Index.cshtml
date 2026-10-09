@@ -1,0 +1,25 @@
+@model VNS.ThreeCStats.Web.Models.EmergencyLoginViewModel
+@{
+    ViewData["Title"] = "Emergency Login";
+}
+
+<h1>Emergency Super Admin Login</h1>
+<p>This sign-in is intended only for emergency administration.</p>
+
+<form method="post" asp-controller="EmergencyLogin" asp-action="Index">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <div>
+        <label asp-for="Username"></label>
+        <input asp-for="Username" autocomplete="username" />
+        <span asp-validation-for="Username"></span>
+    </div>
+
+    <div>
+        <label asp-for="Password"></label>
+        <input asp-for="Password" autocomplete="current-password" />
+        <span asp-validation-for="Password"></span>
+    </div>
+
+    <button type="submit">Sign in</button>
+</form>
