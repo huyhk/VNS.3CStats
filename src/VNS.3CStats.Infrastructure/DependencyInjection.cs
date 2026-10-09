@@ -18,6 +18,8 @@ public static class DependencyInjection
         services.Configure<EmergencyLoginOptions>(
             configuration.GetSection(EmergencyLoginOptions.SectionName));
 
+        services.AddSingleton<IEmergencyLoginService, EmergencyLoginService>();
+
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? "Data Source=3cstats.db";
 
