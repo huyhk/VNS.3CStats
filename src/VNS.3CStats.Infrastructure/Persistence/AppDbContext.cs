@@ -38,6 +38,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             entity.Property(x => x.NormalizedName).HasMaxLength(200).IsRequired();
             entity.Property(x => x.Language).HasMaxLength(10);
             entity.HasIndex(x => x.NormalizedName);
+            entity.HasIndex(x => new { x.PlayerId, x.NormalizedName }).IsUnique();
             entity.HasOne(x => x.Player)
                 .WithMany(x => x.Aliases)
                 .HasForeignKey(x => x.PlayerId)
@@ -54,6 +55,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
         builder.Entity<Competition>(entity =>
         {
             entity.Property(x => x.Name).HasMaxLength(250).IsRequired();
+            entity.HasIndex(x => new { x.OrganizationId, x.Name }).IsUnique();
             entity.HasOne(x => x.Organization)
                 .WithMany()
                 .HasForeignKey(x => x.OrganizationId)
@@ -66,6 +68,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             entity.Property(x => x.CountryCode).HasMaxLength(3);
             entity.Property(x => x.City).HasMaxLength(150);
             entity.Property(x => x.SourceExternalId).HasMaxLength(100);
+            entity.HasIndex(x => new { x.CompetitionId, x.StartDate });
             entity.HasOne(x => x.Competition)
                 .WithMany()
                 .HasForeignKey(x => x.CompetitionId)
@@ -79,7 +82,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             entity.Property(x => x.Player1Average).HasPrecision(8, 5);
             entity.Property(x => x.Player2Average).HasPrecision(8, 5);
             entity.HasIndex(x => new { x.Player1Id, x.Player2Id });
-            entity.HasIndex(x => x.TournamentId);
+            entity.HasIndex(x => new { x.Player2Id, x.Player1Id });
+            entity.HasIndex(x => new { x.TournamentId, x.MatchNumber });
             entity.HasOne(x => x.Tournament).WithMany().HasForeignKey(x => x.TournamentId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(x => x.Player1).WithMany().HasForeignKey(x => x.Player1Id).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.Player2).WithMany().HasForeignKey(x => x.Player2Id).OnDelete(DeleteBehavior.Restrict);
@@ -104,6 +108,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             entity.Property(x => x.RawContentPath).HasMaxLength(500);
             entity.Property(x => x.ParserVersion).HasMaxLength(50).IsRequired();
             entity.HasIndex(x => new { x.DataSourceId, x.ExternalId });
+            entity.HasIndex(x => new { x.DataSourceId, x.ContentHash });
             entity.HasOne(x => x.DataSource).WithMany().HasForeignKey(x => x.DataSourceId).OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -111,6 +116,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             entity.HasKey(x => new { x.MatchId, x.SourceDocumentId });
             entity.Property(x => x.ExternalMatchId).HasMaxLength(150);
+            entity.HasIndex(x => new { x.SourceDocumentId, x.ExternalMatchId });
             entity.HasOne(x => x.Match).WithMany().HasForeignKey(x => x.MatchId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(x => x.SourceDocument).WithMany().HasForeignKey(x => x.SourceDocumentId).OnDelete(DeleteBehavior.Restrict);
         });
