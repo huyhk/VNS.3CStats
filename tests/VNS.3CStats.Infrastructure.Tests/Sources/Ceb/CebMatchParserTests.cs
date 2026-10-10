@@ -21,7 +21,8 @@ public sealed class CebMatchParserTests
         Assert.Equal(2, match.Player2MatchPoints);
         Assert.Equal(15, match.Player1Score);
         Assert.Equal(30, match.Player2Score);
-        Assert.Equal(28, match.Innings);
+        Assert.Equal(28, match.Player1Innings);
+        Assert.Equal(28, match.Player2Innings);
         Assert.Equal(0.535m, match.Player1Average);
         Assert.Equal(1.071m, match.Player2Average);
         Assert.Equal(2, match.Player1HighRun);
@@ -29,13 +30,14 @@ public sealed class CebMatchParserTests
     }
 
     [Fact]
-    public void ParseRow_AllowsDifferentPlayerInningsAndKeepsCompletedInnings()
+    public void ParseRow_PreservesDifferentPlayerInnings()
     {
         var html = CreateMatchRow(27, 3, blueInnings: 38, redInnings: 37);
 
         var match = new CebMatchParser().ParseRow(html);
 
-        Assert.Equal(38, match.Innings);
+        Assert.Equal(38, match.Player1Innings);
+        Assert.Equal(37, match.Player2Innings);
     }
 
     [Fact]
