@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VNS.ThreeCStats.Infrastructure;
 using VNS.ThreeCStats.Infrastructure.Sources.Ceb;
 
 namespace VNS.ThreeCStats.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
+[Authorize(Policy = DependencyInjection.SuperAdminPolicy)]
 [Route("admin/ingestion/ceb")]
 public sealed class CebIngestionController(CebIngestionService ingestionService) : Controller
 {
