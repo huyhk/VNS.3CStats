@@ -8,6 +8,30 @@ public sealed class CebMatchParser
 {
     private const int ExpectedColumnCount = 11;
 
+    public IReadOnlyList<ParsedMatch> ParseMatches(string html)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(html);
+
+        var document = new HtmlDocument();
+        document.LoadHtml(html);
+
+        var candidates = document.DocumentNode.SelectNodes(
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' box_ligne ')]") ?? [];
+
+        var matches = new List<ParsedMatch>();
+        foreach (var candidate in candidates)
+        {
+            if (!IsMatchRow(candidate))
+            {
+                continue;
+            }
+
+            matches.Add(ParseRowNode(candidate));
+        }
+
+        return matches;
+    }
+
     public ParsedMatch ParseRow(string html)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(html);
@@ -15,9 +39,31 @@ public sealed class CebMatchParser
         var document = new HtmlDocument();
         document.LoadHtml(html);
 
-        var row = document.DocumentNode.SelectSingleNode("//*[contains(concat(' ', normalize-space(@class), ' '), ' box_ligne ')]")
+        var row = document.DocumentNode.SelectSingleNode(
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' box_ligne ')]")
             ?? throw new FormatException("CEB match row was not found.");
 
+        return ParseRowNode(row);
+    }
+
+    private static bool IsMatchRow(HtmlNode row)
+    {
+        var columns = row.SelectNodes("./div")?.ToArray();
+        if (columns is null || columns.Length != ExpectedColumnCount)
+        {
+            return false;
+        }
+
+        return HasPair(columns[5]) &&
+               HasPair(columns[6]) &&
+               HasPair(columns[7]) &&
+               HasPair(columns[8]) &&
+               HasPair(columns[9]) &&
+               HasPair(columns[10]);
+    }
+
+    private static ParsedMatch ParseRowNode(HtmlNode row)
+    {
         var columns = row.SelectNodes("./div")?.ToArray() ?? [];
         if (columns.Length != ExpectedColumnCount)
         {
@@ -54,6 +100,10 @@ public sealed class CebMatchParser
             highRuns.Blue,
             highRuns.Red);
     }
+
+    private static bool HasPair(HtmlNode node) =>
+        node.SelectSingleNode(".//span[contains(concat(' ', normalize-space(@class), ' '), ' bleu ')]") is not null &&
+        node.SelectSingleNode(".//span[contains(concat(' ', normalize-space(@class), ' '), ' rouge ')]") is not null;
 
     private static Pair<T> ReadPair<T>(HtmlNode node, Func<string, T> parser)
     {
