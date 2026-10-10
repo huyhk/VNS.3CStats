@@ -58,7 +58,8 @@ public sealed class Match
     public int Player2Score { get; set; }
     public int? Player1MatchPoints { get; set; }
     public int? Player2MatchPoints { get; set; }
-    public int? Innings { get; set; }
+    public int? Player1Innings { get; set; }
+    public int? Player2Innings { get; set; }
     public decimal? Player1Average { get; set; }
     public decimal? Player2Average { get; set; }
     public int? Player1HighRun { get; set; }
