@@ -82,10 +82,11 @@ public sealed class CebMatchParser
         var averages = ReadPair(columns[9], ParseNullableDecimal);
         var highRuns = ReadPair(columns[10], ParseNullableInt);
 
-        if (innings.Blue != innings.Red)
-        {
-            throw new FormatException("CEB row contains different innings values for the two players.");
-        }
+        // CEB reports innings per player. They can differ by one when the player
+        // who started the match reaches the distance before the opponent's final
+        // turn. The canonical model currently has one Match.Innings value, so
+        // retain the greater value: the number of completed innings in the match.
+        var completedInnings = MaxNullable(innings.Blue, innings.Red);
 
         return new ParsedMatch(
             ParseDateTime(Text(columns[0])),
@@ -99,11 +100,26 @@ public sealed class CebMatchParser
             matchPoints.Red,
             scores.Blue,
             scores.Red,
-            innings.Blue,
+            completedInnings,
             averages.Blue,
             averages.Red,
             highRuns.Blue,
             highRuns.Red);
+    }
+
+    private static int? MaxNullable(int? left, int? right)
+    {
+        if (!left.HasValue)
+        {
+            return right;
+        }
+
+        if (!right.HasValue)
+        {
+            return left;
+        }
+
+        return Math.Max(left.Value, right.Value);
     }
 
     private static bool HasPair(HtmlNode node) =>
