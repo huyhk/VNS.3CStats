@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="../VNS.3CStats.Application/VNS.3CStats.Application.csproj" />
+    <ProjectReference Include="../VNS.3CStats.Domain/VNS.3CStats.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
