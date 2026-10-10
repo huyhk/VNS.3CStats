@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VNS.ThreeCStats.Infrastructure;
 using VNS.ThreeCStats.Infrastructure.Sources.Ceb;
+using VNS.ThreeCStats.Web.Areas.Admin.Models;
 
 namespace VNS.ThreeCStats.Web.Areas.Admin.Controllers;
 
@@ -10,6 +11,12 @@ namespace VNS.ThreeCStats.Web.Areas.Admin.Controllers;
 [Route("admin/ingestion/ceb")]
 public sealed class CebIngestionController(CebIngestionService ingestionService) : Controller
 {
+    [HttpGet("")]
+    public IActionResult Index()
+    {
+        return View(CreateEmptyModel());
+    }
+
     [HttpPost("verify-known-event")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> VerifyKnownEvent(CancellationToken cancellationToken)
@@ -19,29 +26,21 @@ public sealed class CebIngestionController(CebIngestionService ingestionService)
             CebKnownEvents.EuropeanChampionship3CushionU25_2025ExternalId,
             cancellationToken);
 
-        return Ok(new
+        return View("Index", new CebIngestionViewModel
         {
-            sourceDocumentId = result.SourceDocument.Id,
-            result.SourceDocument.ExternalId,
-            result.SourceDocument.Url,
-            result.SourceDocument.RetrievedAt,
-            result.SourceDocument.ContentHash,
-            result.SourceDocument.ParserVersion,
-            matchCount = result.Matches.Count,
-            firstMatch = result.Matches.FirstOrDefault() is { } first
-                ? new
-                {
-                    first.MatchNumber,
-                    first.TableNumber,
-                    first.PlayedAt,
-                    first.Stage,
-                    first.Group,
-                    player1 = first.Player1.SourceName,
-                    player2 = first.Player2.SourceName,
-                    first.Player1Score,
-                    first.Player2Score
-                }
-                : null
+            EventUrl = result.SourceDocument.Url,
+            ExternalId = result.SourceDocument.ExternalId ?? string.Empty,
+            SourceDocumentId = result.SourceDocument.Id,
+            RetrievedAt = result.SourceDocument.RetrievedAt,
+            ContentHash = result.SourceDocument.ContentHash,
+            ParserVersion = result.SourceDocument.ParserVersion,
+            Matches = result.Matches
         });
     }
+
+    private static CebIngestionViewModel CreateEmptyModel() => new()
+    {
+        EventUrl = CebKnownEvents.EuropeanChampionship3CushionU25_2025,
+        ExternalId = CebKnownEvents.EuropeanChampionship3CushionU25_2025ExternalId
+    };
 }
