@@ -1,0 +1,67 @@
+@model VNS.ThreeCStats.Web.Areas.Admin.Models.CebIngestionViewModel
+@{
+    ViewData["Title"] = "CEB ingestion";
+}
+
+<h1>CEB ingestion</h1>
+
+<p>Known integration event: <a href="@Model.EventUrl" target="_blank" rel="noopener">CEB event @Model.ExternalId</a></p>
+
+<form method="post" action="/admin/ingestion/ceb/verify-known-event">
+    @Html.AntiForgeryToken()
+    <button type="submit">Fetch and parse event</button>
+</form>
+
+@if (Model.SourceDocumentId.HasValue)
+{
+    <h2>Source document</h2>
+    <dl>
+        <dt>ID</dt><dd>@Model.SourceDocumentId</dd>
+        <dt>Retrieved</dt><dd>@Model.RetrievedAt</dd>
+        <dt>Parser</dt><dd>@Model.ParserVersion</dd>
+        <dt>SHA-256</dt><dd><code>@Model.ContentHash</code></dd>
+        <dt>Matches parsed</dt><dd>@Model.Matches.Count</dd>
+    </dl>
+
+    <h2>Parsed matches</h2>
+    @if (Model.Matches.Count == 0)
+    {
+        <p>No match rows were recognized.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Stage</th>
+                    <th>Group</th>
+                    <th>Player 1</th>
+                    <th>Score</th>
+                    <th>Player 2</th>
+                    <th>Inn.</th>
+                    <th>Avg.</th>
+                    <th>HR</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var matchItem in Model.Matches)
+            {
+                <tr>
+                    <td>@matchItem.MatchNumber</td>
+                    <td>@matchItem.PlayedAt</td>
+                    <td>@matchItem.Stage</td>
+                    <td>@matchItem.Group</td>
+                    <td>@matchItem.Player1.SourceName</td>
+                    <td>@matchItem.Player1Score - @matchItem.Player2Score</td>
+                    <td>@matchItem.Player2.SourceName</td>
+                    <td>@matchItem.Innings</td>
+                    <td>@matchItem.Player1Average / @matchItem.Player2Average</td>
+                    <td>@matchItem.Player1HighRun / @matchItem.Player2HighRun</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+}
