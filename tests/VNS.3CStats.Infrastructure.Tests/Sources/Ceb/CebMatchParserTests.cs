@@ -36,7 +36,7 @@ public sealed class CebMatchParserTests
                 <div class="box_ligne"><div>Info row</div></div>
                 <section id="matches">
                     {MatchRow}
-                    {MatchRow.Replace(">1</div>\n    <div class=\"c_05 center col-s\">1</div>", ">2</div>\n    <div class=\"c_05 center col-s\">2</div>")}
+                    {CreateMatchRow(2, 2)}
                 </section>
                 <div class="box_ligne"><div>Classification row</div></div>
             </body></html>
@@ -51,6 +51,16 @@ public sealed class CebMatchParserTests
     }
 
     [Fact]
+    public void ParseMatches_ReturnsEmpty_WhenPageContainsNoMatchRows()
+    {
+        const string html = "<html><body><div class=\"box_ligne\"><div>Info row</div></div></body></html>";
+
+        var matches = new CebMatchParser().ParseMatches(html);
+
+        Assert.Empty(matches);
+    }
+
+    [Fact]
     public void ParseRow_RejectsUnexpectedColumnLayout()
     {
         const string html = "<div class=\"box_ligne\"><div>only one column</div></div>";
@@ -60,11 +70,11 @@ public sealed class CebMatchParserTests
         Assert.Contains("Expected 11", exception.Message);
     }
 
-    private const string MatchRow = """
+    private static string CreateMatchRow(int matchNumber, int tableNumber) => $"""
         <div class="box_ligne">
             <div class="c_10 col-s">28-03-2025 09:30</div>
-            <div class="c_05 center col-s">1</div>
-            <div class="c_05 center col-s">1</div>
+            <div class="c_05 center col-s">{matchNumber}</div>
+            <div class="c_05 center col-s">{tableNumber}</div>
             <div class="c_10 center col-s">Qualifications</div>
             <div class="c_05 center col-s">A</div>
             <div class="c_25 col-s">
@@ -88,4 +98,6 @@ public sealed class CebMatchParserTests
             </div>
         </div>
         """;
+
+    private static readonly string MatchRow = CreateMatchRow(1, 1);
 }
