@@ -29,6 +29,16 @@ public sealed class CebMatchParserTests
     }
 
     [Fact]
+    public void ParseRow_AllowsDifferentPlayerInningsAndKeepsCompletedInnings()
+    {
+        var html = CreateMatchRow(27, 3, blueInnings: 38, redInnings: 37);
+
+        var match = new CebMatchParser().ParseRow(html);
+
+        Assert.Equal(38, match.Innings);
+    }
+
+    [Fact]
     public void ParseMatches_IgnoresOtherBoxLinesAndExtractsMatchRows()
     {
         var html = $"""
@@ -70,7 +80,11 @@ public sealed class CebMatchParserTests
         Assert.Contains("Expected 11", exception.Message);
     }
 
-    private static string CreateMatchRow(int matchNumber, int tableNumber) => $"""
+    private static string CreateMatchRow(
+        int matchNumber,
+        int tableNumber,
+        int blueInnings = 28,
+        int redInnings = 28) => $"""
         <div class="box_ligne">
             <div class="c_10 col-s">28-03-2025 09:30</div>
             <div class="c_05 center col-s">{matchNumber}</div>
@@ -88,7 +102,7 @@ public sealed class CebMatchParserTests
                 <span class="bleu">15</span><br><span class="rouge">30</span>
             </div>
             <div class="c_05 center col-s">
-                <span class="bleu">28</span><br><span class="rouge">28</span>
+                <span class="bleu">{blueInnings}</span><br><span class="rouge">{redInnings}</span>
             </div>
             <div class="c_10 center col-s">
                 <span class="bleu">0.535</span><br><span class="rouge">1.071</span>
