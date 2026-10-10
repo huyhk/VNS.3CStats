@@ -16,7 +16,12 @@ public sealed class CebMatchParser
         document.LoadHtml(html);
 
         var candidates = document.DocumentNode.SelectNodes(
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' box_ligne ')]") ?? [];
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' box_ligne ')]");
+
+        if (candidates is null)
+        {
+            return Array.Empty<ParsedMatch>();
+        }
 
         var matches = new List<ParsedMatch>();
         foreach (var candidate in candidates)
@@ -64,7 +69,7 @@ public sealed class CebMatchParser
 
     private static ParsedMatch ParseRowNode(HtmlNode row)
     {
-        var columns = row.SelectNodes("./div")?.ToArray() ?? [];
+        var columns = row.SelectNodes("./div")?.ToArray() ?? Array.Empty<HtmlNode>();
         if (columns.Length != ExpectedColumnCount)
         {
             throw new FormatException($"Expected {ExpectedColumnCount} CEB match columns but found {columns.Length}.");
