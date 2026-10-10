@@ -12,6 +12,7 @@ namespace VNS.ThreeCStats.Infrastructure;
 public static class DependencyInjection
 {
     public const string EmergencyCookieScheme = "EmergencyLoginCookie";
+    public const string SuperAdminPolicy = "SuperAdmin";
 
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
@@ -51,6 +52,17 @@ public static class DependencyInjection
                 options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
                 options.SlidingExpiration = false;
             });
+
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(SuperAdminPolicy, policy =>
+            {
+                policy.AddAuthenticationSchemes(
+                    IdentityConstants.ApplicationScheme,
+                    EmergencyCookieScheme);
+                policy.RequireRole(AppRoles.SuperAdmin);
+            });
+        });
 
         return services;
     }
