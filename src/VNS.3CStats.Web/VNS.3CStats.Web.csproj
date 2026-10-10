@@ -3,4 +3,10 @@
     <ProjectReference Include="../VNS.3CStats.Application/VNS.3CStats.Application.csproj" />
     <ProjectReference Include="../VNS.3CStats.Infrastructure/VNS.3CStats.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.20">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 </Project>
