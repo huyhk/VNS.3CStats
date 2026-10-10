@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using VNS.ThreeCStats.Infrastructure.Identity;
 using VNS.ThreeCStats.Infrastructure.Persistence;
+using VNS.ThreeCStats.Infrastructure.Sources.Ceb;
 
 namespace VNS.ThreeCStats.Infrastructure;
 
@@ -22,6 +23,8 @@ public static class DependencyInjection
             configuration.GetSection(EmergencyLoginOptions.SectionName));
 
         services.AddSingleton<IEmergencyLoginService, EmergencyLoginService>();
+        services.AddSingleton<CebMatchParser>();
+        services.AddHttpClient<CebSourceClient>(CebSourceClient.ConfigureHttpClient);
 
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? "Data Source=3cstats.db";
