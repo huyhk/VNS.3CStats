@@ -46,6 +46,25 @@
         <p>This creates canonical 3CStats players only for unambiguous identities. Ambiguous identities remain for review.</p>
     }
 
+    @if (unresolvedCount == 0 && ambiguousCount == 0 && Model.Matches.Count > 0)
+    {
+        <form method="post" action="/admin/ingestion/ceb/import-known-event">
+            @Html.AntiForgeryToken()
+            <button type="submit">Import tournament and matches</button>
+        </form>
+    }
+
+    @if (Model.CanonicalImport is not null)
+    {
+        <h2>Canonical import</h2>
+        <dl>
+            <dt>Tournament ID</dt><dd>@Model.CanonicalImport.TournamentId</dd>
+            <dt>Matches created</dt><dd>@Model.CanonicalImport.CreatedMatches</dd>
+            <dt>Matches already present</dt><dd>@Model.CanonicalImport.ExistingMatches</dd>
+            <dt>Matches unresolved</dt><dd>@Model.CanonicalImport.UnresolvedMatches</dd>
+        </dl>
+    }
+
     <h2>Parsed player identities</h2>
     @if (Model.PlayerResolutions.Count == 0)
     {
