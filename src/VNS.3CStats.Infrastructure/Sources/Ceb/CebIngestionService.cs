@@ -1,20 +1,30 @@
 using Microsoft.EntityFrameworkCore;
 using VNS.ThreeCStats.Application.Ingestion;
 using VNS.ThreeCStats.Domain.Sources;
+using VNS.ThreeCStats.Infrastructure.Normalization;
 using VNS.ThreeCStats.Infrastructure.Persistence;
 
 namespace VNS.ThreeCStats.Infrastructure.Sources.Ceb;
 
+public sealed record CebPlayerResolution(
+    ParsedPlayer ParsedPlayer,
+    PlayerIdentityResolution Resolution);
+
 public sealed record CebIngestionResult(
     SourceDocument SourceDocument,
-    IReadOnlyList<ParsedPlayer> Players,
-    IReadOnlyList<ParsedMatch> Matches);
+    IReadOnlyList<CebPlayerResolution> PlayerResolutions,
+    IReadOnlyList<ParsedMatch> Matches)
+{
+    public IReadOnlyList<ParsedPlayer> Players =>
+        PlayerResolutions.Select(x => x.ParsedPlayer).ToArray();
+}
 
 public sealed class CebIngestionService(
     AppDbContext dbContext,
     CebSourceClient sourceClient,
     CebPlayerParser playerParser,
-    CebMatchParser matchParser)
+    CebMatchParser matchParser,
+    PlayerIdentityResolver playerIdentityResolver)
 {
     public async Task<CebIngestionResult> FetchAndParseAsync(
         Uri url,
@@ -32,7 +42,20 @@ public sealed class CebIngestionService(
 
         var players = playerParser.ParsePlayers(fetched.Content);
         var matches = matchParser.ParseMatches(fetched.Content);
-        return new CebIngestionResult(fetched.Document, players, matches);
+        var resolutions = new List<CebPlayerResolution>(players.Count);
+
+        foreach (var player in players)
+        {
+            var resolution = await playerIdentityResolver.ResolveAsync(
+                dataSource.Id,
+                player.ExternalPlayerId,
+                player.SourceName,
+                player.CountryCode,
+                cancellationToken);
+            resolutions.Add(new CebPlayerResolution(player, resolution));
+        }
+
+        return new CebIngestionResult(fetched.Document, resolutions, matches);
     }
 
     private async Task<DataSource> GetOrCreateDataSourceAsync(CancellationToken cancellationToken)
