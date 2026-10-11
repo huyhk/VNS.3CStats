@@ -7,6 +7,8 @@ namespace VNS.ThreeCStats.Web.Controllers;
 [Route("players")]
 public sealed class PlayersController(AppDbContext dbContext) : Controller
 {
+    private const int MatchPageSize = 20;
+
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
@@ -24,8 +26,10 @@ public sealed class PlayersController(AppDbContext dbContext) : Controller
     }
 
     [HttpGet("{id:long}")]
-    public async Task<IActionResult> Detail(long id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Detail(long id, int page = 1, CancellationToken cancellationToken = default)
     {
+        page = Math.Max(page, 1);
+
         var player = await dbContext.Players
             .AsNoTracking()
             .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -34,21 +38,20 @@ public sealed class PlayersController(AppDbContext dbContext) : Controller
             return NotFound();
         }
 
-        var matches = await dbContext.Matches
+        var matchQuery = dbContext.Matches
             .AsNoTracking()
-            .Where(x => x.Player1Id == id || x.Player2Id == id)
-            .Include(x => x.Player1)
-            .Include(x => x.Player2)
-            .Include(x => x.Tournament)
+            .Where(x => x.Player1Id == id || x.Player2Id == id);
+
+        var totalMatches = await matchQuery.CountAsync(cancellationToken);
+        var totalPages = Math.Max(1, (int)Math.Ceiling(totalMatches / (double)MatchPageSize));
+        page = Math.Min(page, totalPages);
+
+        var matches = await matchQuery
             .OrderByDescending(x => x.PlayedAt)
             .ThenByDescending(x => x.MatchNumber)
-            .ToListAsync(cancellationToken);
-
-        return View(new PlayerDetailViewModel(
-            player.Id,
-            player.CanonicalName,
-            player.CountryCode,
-            matches.Select(x => new PlayerMatchViewModel(
+            .Skip((page - 1) * MatchPageSize)
+            .Take(MatchPageSize)
+            .Select(x => new PlayerMatchViewModel(
                 x.Id,
                 x.TournamentId,
                 x.Tournament.Name,
@@ -61,7 +64,17 @@ public sealed class PlayersController(AppDbContext dbContext) : Controller
                 x.Player2Id,
                 x.Player2.CanonicalName,
                 x.Player2Score,
-                x.WinnerId)).ToArray()));
+                x.WinnerId))
+            .ToListAsync(cancellationToken);
+
+        return View(new PlayerDetailViewModel(
+            player.Id,
+            player.CanonicalName,
+            player.CountryCode,
+            matches,
+            page,
+            totalPages,
+            totalMatches));
     }
 }
 
@@ -75,13 +88,16 @@ public sealed record PlayerDetailViewModel(
     long Id,
     string Name,
     string? CountryCode,
-    IReadOnlyList<PlayerMatchViewModel> Matches);
+    IReadOnlyList<PlayerMatchViewModel> Matches,
+    int Page,
+    int TotalPages,
+    int TotalMatches);
 
 public sealed record PlayerMatchViewModel(
     long Id,
     long TournamentId,
     string TournamentName,
-    DateTimeOffset? PlayedAt,
+    DateTime? PlayedAt,
     string? Stage,
     string? Group,
     long Player1Id,
