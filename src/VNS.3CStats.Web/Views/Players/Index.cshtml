@@ -1,0 +1,26 @@
+@model IReadOnlyList<VNS.ThreeCStats.Web.Controllers.PlayerListItemViewModel>
+@{
+    ViewData["Title"] = "Players";
+}
+
+<h1>Players</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Player</th>
+            <th>Country</th>
+            <th>Matches</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var playerItem in Model)
+    {
+        <tr>
+            <td><a href="/players/@playerItem.Id">@playerItem.Name</a></td>
+            <td>@playerItem.CountryCode</td>
+            <td>@playerItem.MatchCount</td>
+        </tr>
+    }
+    </tbody>
+</table>
