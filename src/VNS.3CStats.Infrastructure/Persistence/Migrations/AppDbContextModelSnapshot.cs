@@ -183,7 +183,7 @@ namespace VNS._3CStats.Infrastructure.Persistence.Migrations
                     b.Property<int?>("MatchNumber")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset?>("PlayedAt")
+                    b.Property<DateTime?>("PlayedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal?>("Player1Average")
