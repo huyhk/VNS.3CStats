@@ -138,7 +138,7 @@ public sealed class CebMatchParser
             : throw new FormatException($"'{value}' is not a valid decimal.");
     }
 
-    private static DateTimeOffset? ParseDateTime(string value)
+    private static DateTime? ParseDateTime(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -155,7 +155,7 @@ public sealed class CebMatchParser
             throw new FormatException($"'{value}' is not a valid CEB match date/time.");
         }
 
-        return new DateTimeOffset(result, TimeSpan.Zero);
+        return DateTime.SpecifyKind(result, DateTimeKind.Unspecified);
     }
 
     private static string Text(HtmlNode node) =>
