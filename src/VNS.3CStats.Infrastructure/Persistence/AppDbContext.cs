@@ -123,9 +123,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
         builder.Entity<SourcePlayerIdentity>(entity =>
         {
-            entity.Property(x => x.ExternalPlayerId).HasMaxLength(150).IsRequired();
+            entity.Property(x => x.ExternalPlayerId).HasMaxLength(150);
             entity.Property(x => x.SourceName).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.NormalizedName).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.CountryCode).HasMaxLength(3);
+
+            // Sources such as CEB do not expose a stable player ID. SQLite unique
+            // indexes allow multiple NULL values, so this remains authoritative
+            // for sources that do provide an external ID without inventing one.
             entity.HasIndex(x => new { x.DataSourceId, x.ExternalPlayerId }).IsUnique();
+            entity.HasIndex(x => new { x.DataSourceId, x.NormalizedName, x.CountryCode });
             entity.HasOne(x => x.DataSource).WithMany().HasForeignKey(x => x.DataSourceId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.Player).WithMany().HasForeignKey(x => x.PlayerId).OnDelete(DeleteBehavior.Restrict);
         });
