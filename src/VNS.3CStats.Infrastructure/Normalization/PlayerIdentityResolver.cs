@@ -9,7 +9,8 @@ public enum PlayerIdentityResolutionKind
     Unresolved = 0,
     SourceIdentity = 1,
     ExactNameAndCountry = 2,
-    Ambiguous = 3
+    Ambiguous = 3,
+    Created = 4
 }
 
 public sealed record PlayerIdentityResolution(
@@ -50,8 +51,6 @@ public sealed class PlayerIdentityResolver(AppDbContext dbContext)
             }
         }
 
-        // CEB has no stable player ID, so an already confirmed mapping is matched
-        // conservatively by source + normalized name + country.
         var mappedPlayers = await dbContext.SourcePlayerIdentities
             .AsNoTracking()
             .Include(x => x.Player)
@@ -86,8 +85,6 @@ public sealed class PlayerIdentityResolver(AppDbContext dbContext)
                 && aliasPlayerIds.Contains(x.Id))
             .ToListAsync(cancellationToken);
 
-        // CanonicalName is not stored normalized. Filter by country in SQL and
-        // normalize the much smaller candidate set in memory.
         var countryPlayers = await dbContext.Players
             .AsNoTracking()
             .Where(x => x.CountryCode == normalizedCountryCode)
