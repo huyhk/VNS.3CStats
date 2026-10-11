@@ -1,0 +1,44 @@
+@model VNS.ThreeCStats.Web.Controllers.TournamentDetailViewModel
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<h1>@Model.Name</h1>
+<p>@Model.OrganizationCode · @Model.CompetitionName</p>
+<p>@Model.StartDate.ToString("yyyy-MM-dd")@if (Model.EndDate.HasValue && Model.EndDate.Value != Model.StartDate) { <text> - @Model.EndDate.Value.ToString("yyyy-MM-dd")</text> }</p>
+<p>@Model.City @Model.CountryCode</p>
+<p>Matches: @Model.Matches.Count</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>No.</th>
+            <th>Stage</th>
+            <th>Group</th>
+            <th>Player 1</th>
+            <th>Score</th>
+            <th>Player 2</th>
+            <th>Innings</th>
+            <th>Average</th>
+            <th>High run</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var matchItem in Model.Matches)
+    {
+        <tr>
+            <td>@matchItem.PlayedAt?.ToString("yyyy-MM-dd HH:mm")</td>
+            <td>@matchItem.MatchNumber</td>
+            <td>@matchItem.Stage</td>
+            <td>@matchItem.Group</td>
+            <td><a href="/players/@matchItem.Player1Id">@matchItem.Player1Name</a></td>
+            <td>@matchItem.Player1Score - @matchItem.Player2Score</td>
+            <td><a href="/players/@matchItem.Player2Id">@matchItem.Player2Name</a></td>
+            <td>@matchItem.Player1Innings / @matchItem.Player2Innings</td>
+            <td>@matchItem.Player1Average / @matchItem.Player2Average</td>
+            <td>@matchItem.Player1HighRun / @matchItem.Player2HighRun</td>
+        </tr>
+    }
+    </tbody>
+</table>
