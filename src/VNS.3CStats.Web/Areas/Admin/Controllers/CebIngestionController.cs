@@ -26,18 +26,35 @@ public sealed class CebIngestionController(CebIngestionService ingestionService)
             CebKnownEvents.EuropeanChampionship3CushionU25_2025ExternalId,
             cancellationToken);
 
-        return View("Index", new CebIngestionViewModel
-        {
-            EventUrl = result.SourceDocument.Url,
-            ExternalId = result.SourceDocument.ExternalId ?? string.Empty,
-            SourceDocumentId = result.SourceDocument.Id,
-            RetrievedAt = result.SourceDocument.RetrievedAt,
-            ContentHash = result.SourceDocument.ContentHash,
-            ParserVersion = result.SourceDocument.ParserVersion,
-            PlayerResolutions = result.PlayerResolutions,
-            Matches = result.Matches
-        });
+        return View("Index", CreateResultModel(result, playersImported: false));
     }
+
+    [HttpPost("import-known-event-players")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ImportKnownEventPlayers(CancellationToken cancellationToken)
+    {
+        var result = await ingestionService.FetchAndImportPlayersAsync(
+            new Uri(CebKnownEvents.EuropeanChampionship3CushionU25_2025),
+            CebKnownEvents.EuropeanChampionship3CushionU25_2025ExternalId,
+            cancellationToken);
+
+        return View("Index", CreateResultModel(result, playersImported: true));
+    }
+
+    private static CebIngestionViewModel CreateResultModel(
+        CebIngestionResult result,
+        bool playersImported) => new()
+    {
+        EventUrl = result.SourceDocument.Url,
+        ExternalId = result.SourceDocument.ExternalId ?? string.Empty,
+        SourceDocumentId = result.SourceDocument.Id,
+        RetrievedAt = result.SourceDocument.RetrievedAt,
+        ContentHash = result.SourceDocument.ContentHash,
+        ParserVersion = result.SourceDocument.ParserVersion,
+        PlayerResolutions = result.PlayerResolutions,
+        Matches = result.Matches,
+        PlayersImported = playersImported
+    };
 
     private static CebIngestionViewModel CreateEmptyModel() => new()
     {
