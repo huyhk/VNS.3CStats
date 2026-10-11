@@ -28,11 +28,13 @@ public static class DependencyInjection
         services.AddSingleton<CebMatchParser>();
         services.AddSingleton<CebPlayerParser>();
         services.AddSingleton<CebEventMetadataParser>();
+        services.AddSingleton<CebEventDiscoveryParser>();
         services.AddScoped<PlayerIdentityResolver>();
         services.AddScoped<PlayerIdentityImporter>();
         services.AddScoped<CebIngestionService>();
         services.AddScoped<CebCanonicalImporter>();
         services.AddHttpClient<CebSourceClient>(CebSourceClient.ConfigureHttpClient);
+        services.AddHttpClient<CebEventDiscoveryClient>(CebEventDiscoveryClient.ConfigureHttpClient);
 
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? "Data Source=3cstats.db";
