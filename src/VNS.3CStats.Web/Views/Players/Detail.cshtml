@@ -5,7 +5,7 @@
 
 <h1>@Model.Name</h1>
 <p>Country: @Model.CountryCode</p>
-<p>Matches: @Model.Matches.Count</p>
+<p>Matches: @Model.TotalMatches</p>
 
 <table>
     <thead>
@@ -27,16 +27,27 @@
             <td>@matchItem.TournamentName</td>
             <td>@matchItem.Stage</td>
             <td>@matchItem.Group</td>
-            <td>
-                <a href="/players/@matchItem.Player1Id">@matchItem.Player1Name</a>
-            </td>
-            <td>
-                @matchItem.Player1Score - @matchItem.Player2Score
-            </td>
-            <td>
-                <a href="/players/@matchItem.Player2Id">@matchItem.Player2Name</a>
-            </td>
+            <td><a href="/players/@matchItem.Player1Id">@matchItem.Player1Name</a></td>
+            <td>@matchItem.Player1Score - @matchItem.Player2Score</td>
+            <td><a href="/players/@matchItem.Player2Id">@matchItem.Player2Name</a></td>
         </tr>
     }
     </tbody>
 </table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Match pages">
+        @if (Model.Page > 1)
+        {
+            <a href="/players/@Model.Id?page=@(Model.Page - 1)">Previous</a>
+        }
+
+        <span> Page @Model.Page of @Model.TotalPages </span>
+
+        @if (Model.Page < Model.TotalPages)
+        {
+            <a href="/players/@Model.Id?page=@(Model.Page + 1)">Next</a>
+        }
+    </nav>
+}
