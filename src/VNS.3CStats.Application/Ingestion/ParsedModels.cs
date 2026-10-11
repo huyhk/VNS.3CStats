@@ -6,7 +6,7 @@ public sealed record ParsedPlayer(
     string? CountryCode = null);
 
 public sealed record ParsedMatch(
-    DateTimeOffset? PlayedAt,
+    DateTime? PlayedAt,
     int? MatchNumber,
     int? TableNumber,
     string? Stage,
