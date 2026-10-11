@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddSingleton<IEmergencyLoginService, EmergencyLoginService>();
         services.AddSingleton<CebMatchParser>();
         services.AddSingleton<CebPlayerParser>();
+        services.AddSingleton<CebEventMetadataParser>();
         services.AddScoped<PlayerIdentityResolver>();
         services.AddScoped<PlayerIdentityImporter>();
         services.AddScoped<CebIngestionService>();
