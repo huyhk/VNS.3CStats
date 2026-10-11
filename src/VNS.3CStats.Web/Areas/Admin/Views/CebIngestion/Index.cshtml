@@ -20,8 +20,37 @@
         <dt>Retrieved</dt><dd>@Model.RetrievedAt</dd>
         <dt>Parser</dt><dd>@Model.ParserVersion</dd>
         <dt>SHA-256</dt><dd><code>@Model.ContentHash</code></dd>
+        <dt>Players parsed</dt><dd>@Model.Players.Count</dd>
         <dt>Matches parsed</dt><dd>@Model.Matches.Count</dd>
     </dl>
+
+    <h2>Parsed player identities</h2>
+    @if (Model.Players.Count == 0)
+    {
+        <p>No player identities were recognized.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>CEB ID</th>
+                    <th>Source name</th>
+                    <th>Country</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var playerItem in Model.Players)
+            {
+                <tr>
+                    <td><code>@playerItem.ExternalPlayerId</code></td>
+                    <td>@playerItem.SourceName</td>
+                    <td>@playerItem.CountryCode</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
 
     <h2>Parsed matches</h2>
     @if (Model.Matches.Count == 0)
