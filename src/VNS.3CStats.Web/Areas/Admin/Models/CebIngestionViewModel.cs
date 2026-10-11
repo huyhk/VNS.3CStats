@@ -10,5 +10,6 @@ public sealed class CebIngestionViewModel
     public DateTimeOffset? RetrievedAt { get; init; }
     public string? ContentHash { get; init; }
     public string? ParserVersion { get; init; }
+    public IReadOnlyList<ParsedPlayer> Players { get; init; } = Array.Empty<ParsedPlayer>();
     public IReadOnlyList<ParsedMatch> Matches { get; init; } = Array.Empty<ParsedMatch>();
 }
