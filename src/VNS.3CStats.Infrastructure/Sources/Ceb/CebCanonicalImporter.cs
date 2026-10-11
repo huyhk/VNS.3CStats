@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VNS.ThreeCStats.Domain.Competitions;
+using VNS.ThreeCStats.Domain.Players;
 using VNS.ThreeCStats.Domain.Sources;
 using VNS.ThreeCStats.Infrastructure.Normalization;
 using VNS.ThreeCStats.Infrastructure.Persistence;
@@ -161,7 +162,7 @@ public sealed class CebCanonicalImporter(AppDbContext dbContext)
         return tournament;
     }
 
-    private async Task<Dictionary<string, List<Domain.Players.Player>>> BuildPlayerMapAsync(
+    private async Task<Dictionary<string, List<Player>>> BuildPlayerMapAsync(
         long dataSourceId,
         IReadOnlyList<CebPlayerResolution> playerResolutions,
         CancellationToken cancellationToken)
@@ -185,8 +186,8 @@ public sealed class CebCanonicalImporter(AppDbContext dbContext)
                 x => x.Select(y => y.Player).GroupBy(y => y.Id).Select(y => y.First()).ToList());
     }
 
-    private static Domain.Players.Player? ResolveMatchPlayer(
-        IReadOnlyDictionary<string, List<Domain.Players.Player>> playerMap,
+    private static Player? ResolveMatchPlayer(
+        IReadOnlyDictionary<string, List<Player>> playerMap,
         string sourceName)
     {
         var normalizedName = PlayerNameNormalizer.Normalize(sourceName);
