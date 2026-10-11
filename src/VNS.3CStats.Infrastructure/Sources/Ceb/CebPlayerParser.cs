@@ -1,9 +1,10 @@
+using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 using VNS.ThreeCStats.Application.Ingestion;
 
 namespace VNS.ThreeCStats.Infrastructure.Sources.Ceb;
 
-public sealed class CebPlayerParser
+public sealed partial class CebPlayerParser
 {
     public IReadOnlyList<ParsedPlayer> ParsePlayers(string html)
     {
@@ -12,87 +13,86 @@ public sealed class CebPlayerParser
         var document = new HtmlDocument();
         document.LoadHtml(html);
 
+        // The current CEB event page has no player profile links. The Players tab
+        // is rendered as roster rows inside onglet_6. Its player column contains
+        // values such as "KRISTIANSEN Daniel (DNK)".
+        var roster = document.DocumentNode.SelectSingleNode("//*[@id='onglet_6']");
+        if (roster is null)
+        {
+            return Array.Empty<ParsedPlayer>();
+        }
+
+        var rows = roster.SelectNodes(
+            ".//*[contains(concat(' ', normalize-space(@class), ' '), ' box_ligne ')]");
+        if (rows is null)
+        {
+            return Array.Empty<ParsedPlayer>();
+        }
+
         var players = new List<ParsedPlayer>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // CEB event pages expose registered players as links to /players/{id}.html.
-        // Read the source identity from the link instead of manufacturing an ID
-        // from a normalized display name.
-        var links = document.DocumentNode.SelectNodes("//a[contains(@href, '/players/')]");
-        if (links is null)
+        foreach (var row in rows)
         {
-            return players;
-        }
-
-        foreach (var link in links)
-        {
-            var href = link.GetAttributeValue("href", string.Empty);
-            var externalId = ReadExternalPlayerId(href);
-            var sourceName = Text(link);
-
-            if (string.IsNullOrWhiteSpace(externalId) || string.IsNullOrWhiteSpace(sourceName))
+            var columns = row.SelectNodes("./div")?.ToArray();
+            if (columns is null || columns.Length < 2 || IsHeaderRow(row))
             {
                 continue;
             }
 
-            if (!seen.Add(externalId))
+            var playerText = Text(columns[1]);
+            var match = PlayerWithCountryRegex().Match(playerText);
+            if (!match.Success)
             {
                 continue;
             }
 
-            players.Add(new ParsedPlayer(
-                sourceName,
-                externalId,
-                ReadCountryCode(link)));
+            var sourceName = match.Groups["name"].Value.Trim();
+            var countryCode = NormalizeCountryCode(match.Groups["country"].Value);
+            if (sourceName.Length == 0)
+            {
+                continue;
+            }
+
+            // This roster does not expose a stable CEB player ID. Position and
+            // federation slot (e.g. FRA1) are event-specific and must not be used
+            // as SourcePlayerIdentity.ExternalPlayerId.
+            var key = $"{sourceName}\u001f{countryCode}";
+            if (!seen.Add(key))
+            {
+                continue;
+            }
+
+            players.Add(new ParsedPlayer(sourceName, null, countryCode));
         }
 
         return players;
     }
 
-    private static string? ReadExternalPlayerId(string href)
+    private static bool IsHeaderRow(HtmlNode row) =>
+        row.GetAttributeValue("class", string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Contains("box_titres", StringComparer.OrdinalIgnoreCase);
+
+    private static string NormalizeCountryCode(string value)
     {
-        const string marker = "/players/";
-        var markerIndex = href.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-        if (markerIndex < 0)
+        var code = value.Trim().ToUpperInvariant();
+
+        // CEB is not fully consistent here: the same roster uses FRA/ITA/GRC
+        // alongside FR/IT/GR. Normalize the observed two-letter variants to the
+        // corresponding three-letter codes used elsewhere in the same event.
+        return code switch
         {
-            return null;
-        }
-
-        var value = href[(markerIndex + marker.Length)..];
-        var queryIndex = value.IndexOfAny(['?', '#']);
-        if (queryIndex >= 0)
-        {
-            value = value[..queryIndex];
-        }
-
-        if (value.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
-        {
-            value = value[..^5];
-        }
-
-        return string.IsNullOrWhiteSpace(value) ? null : value.Trim('/');
-    }
-
-    private static string? ReadCountryCode(HtmlNode link)
-    {
-        // Prefer explicit ISO-like attributes when CEB provides them. Do not
-        // infer a country from flag image filenames or unrelated page text.
-        var node = link;
-        for (var depth = 0; node is not null && depth < 4; depth++, node = node.ParentNode)
-        {
-            foreach (var attributeName in new[] { "data-country", "data-country-code", "data-nation" })
-            {
-                var value = node.GetAttributeValue(attributeName, string.Empty).Trim();
-                if (value.Length == 3 && value.All(char.IsLetter))
-                {
-                    return value.ToUpperInvariant();
-                }
-            }
-        }
-
-        return null;
+            "FR" => "FRA",
+            "IT" => "ITA",
+            "GR" => "GRC",
+            _ => code
+        };
     }
 
     private static string Text(HtmlNode node) =>
         HtmlEntity.DeEntitize(node.InnerText).Trim();
+
+    [GeneratedRegex(@"^(?<name>.+?)\s*\((?<country>[A-Za-z]{2,3})\)\s*$", RegexOptions.CultureInvariant)]
+    private static partial Regex PlayerWithCountryRegex();
 }
