@@ -25,7 +25,7 @@ public sealed partial class CebEventDiscoveryParser
         document.LoadHtml(html);
 
         var results = new Dictionary<string, DiscoveredCebEvent>(StringComparer.Ordinal);
-        var links = document.DocumentNode.SelectNodes("//a[@href]") ?? [];
+        IEnumerable<HtmlNode> links = document.DocumentNode.SelectNodes("//a[@href]") ?? Enumerable.Empty<HtmlNode>();
 
         foreach (var link in links)
         {
@@ -42,8 +42,10 @@ public sealed partial class CebEventDiscoveryParser
             }
 
             var row = link.Ancestors("tr").FirstOrDefault();
-            var cells = row?.Elements("td").ToArray() ?? [];
-            var dates = row is null ? [] : DateRegex().Matches(NormalizeText(row.InnerText)).Select(x => ParseDate(x.Value)).ToArray();
+            var cells = row?.Elements("td").ToArray() ?? Array.Empty<HtmlNode>();
+            var dates = row is null
+                ? Array.Empty<DateOnly>()
+                : DateRegex().Matches(NormalizeText(row.InnerText)).Select(x => ParseDate(x.Value)).ToArray();
             var discipline = cells.Length >= 4 ? NullIfEmpty(NormalizeText(cells[^4].InnerText)) : null;
 
             if (!IsThreeCushion(discipline, name))
