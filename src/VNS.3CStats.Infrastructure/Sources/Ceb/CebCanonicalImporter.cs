@@ -15,11 +15,11 @@ public sealed record CebCanonicalImportResult(
 
 public sealed class CebCanonicalImporter(AppDbContext dbContext)
 {
-    public async Task<CebCanonicalImportResult> ImportKnownU25EventAsync(
+    public async Task<CebCanonicalImportResult> ImportAsync(
         CebIngestionResult ingestion,
         CancellationToken cancellationToken = default)
     {
-        var tournament = await GetOrCreateKnownU25TournamentAsync(cancellationToken);
+        var tournament = await GetOrCreateTournamentAsync(ingestion, cancellationToken);
         var playerMap = await BuildPlayerMapAsync(
             ingestion.SourceDocument.DataSourceId,
             ingestion.PlayerResolutions,
@@ -106,7 +106,9 @@ public sealed class CebCanonicalImporter(AppDbContext dbContext)
         return new CebCanonicalImportResult(tournament.Id, created, existing, unresolved);
     }
 
-    private async Task<Tournament> GetOrCreateKnownU25TournamentAsync(CancellationToken cancellationToken)
+    private async Task<Tournament> GetOrCreateTournamentAsync(
+        CebIngestionResult ingestion,
+        CancellationToken cancellationToken)
     {
         var organization = await dbContext.Organizations
             .SingleOrDefaultAsync(x => x.Code == "CEB", cancellationToken);
@@ -121,7 +123,7 @@ public sealed class CebCanonicalImporter(AppDbContext dbContext)
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        const string competitionName = "European Championship 3-Cushion U25";
+        var competitionName = BuildCompetitionName(ingestion.Event.Name);
         var competition = await dbContext.Competitions
             .SingleOrDefaultAsync(
                 x => x.OrganizationId == organization.Id && x.Name == competitionName,
@@ -138,10 +140,21 @@ public sealed class CebCanonicalImporter(AppDbContext dbContext)
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        var tournament = await dbContext.Tournaments.SingleOrDefaultAsync(
+        var externalId = ingestion.SourceDocument.ExternalId;
+        Tournament? tournament = null;
+        if (!string.IsNullOrWhiteSpace(externalId))
+        {
+            tournament = await dbContext.Tournaments.SingleOrDefaultAsync(
+                x => x.CompetitionId == competition.Id && x.SourceExternalId == externalId,
+                cancellationToken);
+        }
+
+        tournament ??= await dbContext.Tournaments.SingleOrDefaultAsync(
             x => x.CompetitionId == competition.Id
-                && x.SourceExternalId == CebKnownEvents.EuropeanChampionship3CushionU25_2025ExternalId,
+                && x.Name == ingestion.Event.Name
+                && x.StartDate == ingestion.Event.StartDate,
             cancellationToken);
+
         if (tournament is not null)
         {
             return tournament;
@@ -150,17 +163,41 @@ public sealed class CebCanonicalImporter(AppDbContext dbContext)
         tournament = new Tournament
         {
             CompetitionId = competition.Id,
-            Name = "European Championship 3-Cushion U25 2025",
-            StartDate = new DateOnly(2025, 3, 28),
-            EndDate = new DateOnly(2025, 3, 30),
-            CountryCode = "DNK",
-            City = "Aarhus",
-            SourceExternalId = CebKnownEvents.EuropeanChampionship3CushionU25_2025ExternalId
+            Name = ingestion.Event.Name,
+            StartDate = ingestion.Event.StartDate,
+            EndDate = ingestion.Event.EndDate,
+            CountryCode = MapCountryCode(ingestion.Event.CountryName),
+            City = ingestion.Event.City,
+            SourceExternalId = externalId
         };
         dbContext.Tournaments.Add(tournament);
         await dbContext.SaveChangesAsync(cancellationToken);
         return tournament;
     }
+
+    private static string BuildCompetitionName(string eventName)
+    {
+        var year = eventName.Length >= 4 ? eventName[^4..] : string.Empty;
+        return int.TryParse(year, out _)
+            ? eventName[..^4].TrimEnd(' ', '-', '–', '—')
+            : eventName;
+    }
+
+    private static string? MapCountryCode(string? countryName) => countryName?.Trim() switch
+    {
+        "Denmark" => "DNK",
+        "France" => "FRA",
+        "Germany" => "DEU",
+        "Greece" => "GRC",
+        "Italy" => "ITA",
+        "Netherlands" => "NLD",
+        "Portugal" => "PRT",
+        "Spain" => "ESP",
+        "Sweden" => "SWE",
+        "Türkiye" or "Turkey" => "TUR",
+        "Belgium" => "BEL",
+        _ => null
+    };
 
     private async Task<Dictionary<string, List<Player>>> BuildPlayerMapAsync(
         long dataSourceId,
