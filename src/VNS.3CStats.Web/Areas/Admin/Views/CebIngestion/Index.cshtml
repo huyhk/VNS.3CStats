@@ -1,4 +1,5 @@
 @model VNS.ThreeCStats.Web.Areas.Admin.Models.CebIngestionViewModel
+@using VNS.ThreeCStats.Infrastructure.Normalization
 @{
     ViewData["Title"] = "CEB ingestion";
 }
@@ -14,8 +15,9 @@
 
 @if (Model.SourceDocumentId.HasValue)
 {
+    var createdCount = Model.PlayerResolutions.Count(x => x.Resolution.Kind == PlayerIdentityResolutionKind.Created);
     var resolvedCount = Model.PlayerResolutions.Count(x => x.Resolution.IsResolved);
-    var ambiguousCount = Model.PlayerResolutions.Count(x => x.Resolution.Kind == VNS.ThreeCStats.Infrastructure.Normalization.PlayerIdentityResolutionKind.Ambiguous);
+    var ambiguousCount = Model.PlayerResolutions.Count(x => x.Resolution.Kind == PlayerIdentityResolutionKind.Ambiguous);
     var unresolvedCount = Model.PlayerResolutions.Count - resolvedCount - ambiguousCount;
 
     <h2>Source document</h2>
@@ -25,11 +27,24 @@
         <dt>Parser</dt><dd>@Model.ParserVersion</dd>
         <dt>SHA-256</dt><dd><code>@Model.ContentHash</code></dd>
         <dt>Players parsed</dt><dd>@Model.PlayerResolutions.Count</dd>
+        @if (Model.PlayersImported)
+        {
+            <dt>Created</dt><dd>@createdCount</dd>
+        }
         <dt>Resolved</dt><dd>@resolvedCount</dd>
         <dt>Ambiguous</dt><dd>@ambiguousCount</dd>
         <dt>Unresolved</dt><dd>@unresolvedCount</dd>
         <dt>Matches parsed</dt><dd>@Model.Matches.Count</dd>
     </dl>
+
+    @if (!Model.PlayersImported && unresolvedCount > 0)
+    {
+        <form method="post" action="/admin/ingestion/ceb/import-known-event-players">
+            @Html.AntiForgeryToken()
+            <button type="submit">Import players</button>
+        </form>
+        <p>This creates canonical 3CStats players only for unambiguous identities. Ambiguous identities remain for review.</p>
+    }
 
     <h2>Parsed player identities</h2>
     @if (Model.PlayerResolutions.Count == 0)
