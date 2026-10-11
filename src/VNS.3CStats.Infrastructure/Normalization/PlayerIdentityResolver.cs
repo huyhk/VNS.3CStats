@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using VNS.ThreeCStats.Domain.Players;
-using VNS.ThreeCStats.Domain.Sources;
 using VNS.ThreeCStats.Infrastructure.Persistence;
 
 namespace VNS.ThreeCStats.Infrastructure.Normalization;
@@ -35,7 +34,6 @@ public sealed class PlayerIdentityResolver(AppDbContext dbContext)
         var normalizedName = PlayerNameNormalizer.Normalize(sourceName);
         var normalizedCountryCode = NormalizeCountryCode(countryCode);
 
-        // A real source ID is authoritative inside that source when one exists.
         if (!string.IsNullOrWhiteSpace(externalPlayerId))
         {
             var sourceIdentity = await dbContext.SourcePlayerIdentities
@@ -48,74 +46,74 @@ public sealed class PlayerIdentityResolver(AppDbContext dbContext)
 
             if (sourceIdentity is not null)
             {
-                return new PlayerIdentityResolution(
-                    PlayerIdentityResolutionKind.SourceIdentity,
-                    sourceIdentity.Player,
-                    [sourceIdentity.Player]);
+                return Resolved(PlayerIdentityResolutionKind.SourceIdentity, sourceIdentity.Player);
             }
         }
 
-        // CEB and similar sources have no stable player ID. An already confirmed
-        // source identity is therefore matched by the conservative source key.
-        var mappedIdentities = await dbContext.SourcePlayerIdentities
+        // CEB has no stable player ID, so an already confirmed mapping is matched
+        // conservatively by source + normalized name + country.
+        var mappedPlayers = await dbContext.SourcePlayerIdentities
             .AsNoTracking()
             .Include(x => x.Player)
             .Where(x => x.DataSourceId == dataSourceId
                 && x.NormalizedName == normalizedName
                 && x.CountryCode == normalizedCountryCode)
+            .Select(x => x.Player)
             .ToListAsync(cancellationToken);
 
-        var mappedPlayers = mappedIdentities
-            .Select(x => x.Player)
+        mappedPlayers = mappedPlayers
             .GroupBy(x => x.Id)
             .Select(x => x.First())
             .ToList();
 
         if (mappedPlayers.Count == 1)
         {
-            return new PlayerIdentityResolution(
-                PlayerIdentityResolutionKind.SourceIdentity,
-                mappedPlayers[0],
-                mappedPlayers);
+            return Resolved(PlayerIdentityResolutionKind.SourceIdentity, mappedPlayers[0]);
         }
 
         if (mappedPlayers.Count > 1)
         {
-            return new PlayerIdentityResolution(
-                PlayerIdentityResolutionKind.Ambiguous,
-                null,
-                mappedPlayers);
+            return Ambiguous(mappedPlayers);
         }
 
-        // Only exact normalized aliases/canonical names with the same country are
-        // safe enough to resolve automatically. Fuzzy variants remain candidates
-        // for a later review workflow rather than being silently merged.
         var aliasPlayerIds = dbContext.PlayerAliases
             .Where(x => x.NormalizedName == normalizedName)
             .Select(x => x.PlayerId);
 
-        var candidates = await dbContext.Players
+        var aliasCandidates = await dbContext.Players
             .AsNoTracking()
             .Where(x => x.CountryCode == normalizedCountryCode
-                && (PlayerNameNormalizer.NormalizeForStorage(x.CanonicalName) == normalizedName
-                    || aliasPlayerIds.Contains(x.Id)))
+                && aliasPlayerIds.Contains(x.Id))
             .ToListAsync(cancellationToken);
+
+        // CanonicalName is not stored normalized. Filter by country in SQL and
+        // normalize the much smaller candidate set in memory.
+        var countryPlayers = await dbContext.Players
+            .AsNoTracking()
+            .Where(x => x.CountryCode == normalizedCountryCode)
+            .ToListAsync(cancellationToken);
+
+        var candidates = aliasCandidates
+            .Concat(countryPlayers.Where(x => PlayerNameNormalizer.Normalize(x.CanonicalName) == normalizedName))
+            .GroupBy(x => x.Id)
+            .Select(x => x.First())
+            .ToList();
 
         if (candidates.Count == 1)
         {
-            return new PlayerIdentityResolution(
-                PlayerIdentityResolutionKind.ExactNameAndCountry,
-                candidates[0],
-                candidates);
+            return Resolved(PlayerIdentityResolutionKind.ExactNameAndCountry, candidates[0]);
         }
 
-        return new PlayerIdentityResolution(
-            candidates.Count > 1
-                ? PlayerIdentityResolutionKind.Ambiguous
-                : PlayerIdentityResolutionKind.Unresolved,
-            null,
-            candidates);
+        return candidates.Count > 1
+            ? Ambiguous(candidates)
+            : new PlayerIdentityResolution(PlayerIdentityResolutionKind.Unresolved, null, []);
     }
+
+    private static PlayerIdentityResolution Resolved(PlayerIdentityResolutionKind kind, Player player) =>
+        new(kind, player, [player]);
+
+    private static PlayerIdentityResolution Ambiguous(IReadOnlyList<Player> candidates) =>
+        new(PlayerIdentityResolutionKind.Ambiguous, null, candidates);
 
     private static string? NormalizeCountryCode(string? countryCode) =>
         string.IsNullOrWhiteSpace(countryCode)
