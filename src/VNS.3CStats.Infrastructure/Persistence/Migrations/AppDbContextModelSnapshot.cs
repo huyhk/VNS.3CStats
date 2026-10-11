@@ -487,12 +487,20 @@ namespace VNS._3CStats.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CountryCode")
+                        .HasMaxLength(3)
+                        .HasColumnType("TEXT");
+
                     b.Property<long>("DataSourceId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ExternalPlayerId")
-                        .IsRequired()
                         .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<long>("PlayerId")
@@ -509,6 +517,8 @@ namespace VNS._3CStats.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("DataSourceId", "ExternalPlayerId")
                         .IsUnique();
+
+                    b.HasIndex("DataSourceId", "NormalizedName", "CountryCode");
 
                     b.ToTable("SourcePlayerIdentities");
                 });
