@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using VNS.ThreeCStats.Infrastructure.Identity;
+using VNS.ThreeCStats.Infrastructure.Normalization;
 using VNS.ThreeCStats.Infrastructure.Persistence;
 using VNS.ThreeCStats.Infrastructure.Sources.Ceb;
 
@@ -26,6 +27,7 @@ public static class DependencyInjection
         services.AddSingleton<IEmergencyLoginService, EmergencyLoginService>();
         services.AddSingleton<CebMatchParser>();
         services.AddSingleton<CebPlayerParser>();
+        services.AddScoped<PlayerIdentityResolver>();
         services.AddScoped<CebIngestionService>();
         services.AddHttpClient<CebSourceClient>(CebSourceClient.ConfigureHttpClient);
 
