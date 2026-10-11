@@ -10,7 +10,7 @@ public sealed class CebMatchParserTests
     {
         var match = new CebMatchParser().ParseRow(MatchRow);
 
-        Assert.Equal(new DateTimeOffset(2025, 3, 28, 9, 30, 0, TimeSpan.Zero), match.PlayedAt);
+        Assert.Equal(new DateTime(2025, 3, 28, 9, 30, 0, DateTimeKind.Unspecified), match.PlayedAt);
         Assert.Equal(1, match.MatchNumber);
         Assert.Equal(1, match.TableNumber);
         Assert.Equal("Qualifications", match.Stage);
