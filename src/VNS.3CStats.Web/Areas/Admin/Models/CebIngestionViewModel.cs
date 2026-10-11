@@ -7,6 +7,7 @@ public sealed class CebIngestionViewModel
 {
     public string EventUrl { get; init; } = string.Empty;
     public string ExternalId { get; init; } = string.Empty;
+    public CebEventMetadata? Event { get; init; }
     public long? SourceDocumentId { get; init; }
     public DateTimeOffset? RetrievedAt { get; init; }
     public string? ContentHash { get; init; }
