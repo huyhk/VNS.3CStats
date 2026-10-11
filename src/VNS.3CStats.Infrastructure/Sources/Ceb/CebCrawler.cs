@@ -1,3 +1,5 @@
+using VNS.ThreeCStats.Infrastructure.Normalization;
+
 namespace VNS.ThreeCStats.Infrastructure.Sources.Ceb;
 
 public sealed record CebCrawlEventResult(
@@ -34,7 +36,8 @@ public sealed class CebCrawler(
                     discoveredEvent.ExternalId,
                     cancellationToken);
 
-                var unresolvedBeforeImport = ingestion.PlayerResolutions.Count(x => x.Resolution.State == PlayerResolutionState.Unresolved);
+                var unresolvedBeforeImport = ingestion.PlayerResolutions.Count(
+                    x => x.Resolution.Kind == PlayerIdentityResolutionKind.Unresolved);
                 var importedPlayers = unresolvedBeforeImport > 0
                     ? await ingestionService.FetchAndImportPlayersAsync(
                         discoveredEvent.Url,
@@ -43,7 +46,8 @@ public sealed class CebCrawler(
                     : ingestion;
 
                 var canonical = await canonicalImporter.ImportAsync(importedPlayers, cancellationToken);
-                var createdPlayers = importedPlayers.PlayerResolutions.Count(x => x.Resolution.State == PlayerResolutionState.Created);
+                var createdPlayers = importedPlayers.PlayerResolutions.Count(
+                    x => x.Resolution.Kind == PlayerIdentityResolutionKind.Created);
 
                 results.Add(new CebCrawlEventResult(
                     discoveredEvent,
