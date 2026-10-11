@@ -1,0 +1,36 @@
+@model IReadOnlyList<VNS.ThreeCStats.Web.Controllers.TournamentListItemViewModel>
+@{
+    ViewData["Title"] = "Tournaments";
+}
+
+<h1>Tournaments</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Tournament</th>
+            <th>Organization</th>
+            <th>Date</th>
+            <th>Location</th>
+            <th>Matches</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var tournamentItem in Model)
+    {
+        <tr>
+            <td><a href="/tournaments/@tournamentItem.Id">@tournamentItem.Name</a></td>
+            <td>@tournamentItem.OrganizationCode</td>
+            <td>
+                @tournamentItem.StartDate.ToString("yyyy-MM-dd")
+                @if (tournamentItem.EndDate.HasValue && tournamentItem.EndDate.Value != tournamentItem.StartDate)
+                {
+                    <text> - @tournamentItem.EndDate.Value.ToString("yyyy-MM-dd")</text>
+                }
+            </td>
+            <td>@tournamentItem.City @tournamentItem.CountryCode</td>
+            <td>@tournamentItem.MatchCount</td>
+        </tr>
+    }
+    </tbody>
+</table>
