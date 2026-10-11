@@ -5,11 +5,15 @@ using VNS.ThreeCStats.Infrastructure.Persistence;
 
 namespace VNS.ThreeCStats.Infrastructure.Sources.Ceb;
 
-public sealed record CebIngestionResult(SourceDocument SourceDocument, IReadOnlyList<ParsedMatch> Matches);
+public sealed record CebIngestionResult(
+    SourceDocument SourceDocument,
+    IReadOnlyList<ParsedPlayer> Players,
+    IReadOnlyList<ParsedMatch> Matches);
 
 public sealed class CebIngestionService(
     AppDbContext dbContext,
     CebSourceClient sourceClient,
+    CebPlayerParser playerParser,
     CebMatchParser matchParser)
 {
     public async Task<CebIngestionResult> FetchAndParseAsync(
@@ -26,8 +30,9 @@ public sealed class CebIngestionService(
         dbContext.SourceDocuments.Add(fetched.Document);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        var players = playerParser.ParsePlayers(fetched.Content);
         var matches = matchParser.ParseMatches(fetched.Content);
-        return new CebIngestionResult(fetched.Document, matches);
+        return new CebIngestionResult(fetched.Document, players, matches);
     }
 
     private async Task<DataSource> GetOrCreateDataSourceAsync(CancellationToken cancellationToken)
