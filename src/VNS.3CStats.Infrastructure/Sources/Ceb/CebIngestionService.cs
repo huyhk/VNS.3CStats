@@ -12,6 +12,7 @@ public sealed record CebPlayerResolution(
 
 public sealed record CebIngestionResult(
     SourceDocument SourceDocument,
+    CebEventMetadata Event,
     IReadOnlyList<CebPlayerResolution> PlayerResolutions,
     IReadOnlyList<ParsedMatch> Matches)
 {
@@ -22,6 +23,7 @@ public sealed record CebIngestionResult(
 public sealed class CebIngestionService(
     AppDbContext dbContext,
     CebSourceClient sourceClient,
+    CebEventMetadataParser eventMetadataParser,
     CebPlayerParser playerParser,
     CebMatchParser matchParser,
     PlayerIdentityResolver playerIdentityResolver,
@@ -54,6 +56,7 @@ public sealed class CebIngestionService(
         dbContext.SourceDocuments.Add(fetched.Document);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        var eventMetadata = eventMetadataParser.Parse(fetched.Content);
         var players = playerParser.ParsePlayers(fetched.Content);
         var matches = matchParser.ParseMatches(fetched.Content);
         var resolutions = new List<CebPlayerResolution>(players.Count);
@@ -72,7 +75,7 @@ public sealed class CebIngestionService(
             resolutions.Add(new CebPlayerResolution(player, resolution));
         }
 
-        return new CebIngestionResult(fetched.Document, resolutions, matches);
+        return new CebIngestionResult(fetched.Document, eventMetadata, resolutions, matches);
     }
 
     private async Task<DataSource> GetOrCreateDataSourceAsync(CancellationToken cancellationToken)
