@@ -180,9 +180,6 @@ namespace VNS._3CStats.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("Innings")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int?>("MatchNumber")
                         .HasColumnType("INTEGER");
 
@@ -199,6 +196,9 @@ namespace VNS._3CStats.Infrastructure.Persistence.Migrations
                     b.Property<long>("Player1Id")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("Player1Innings")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("Player1MatchPoints")
                         .HasColumnType("INTEGER");
 
@@ -213,6 +213,9 @@ namespace VNS._3CStats.Infrastructure.Persistence.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<long>("Player2Id")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Player2Innings")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("Player2MatchPoints")

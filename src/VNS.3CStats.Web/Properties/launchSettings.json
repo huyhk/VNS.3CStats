@@ -6,7 +6,8 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "https://localhost:54983;http://localhost:54984"
+      "applicationUrl": "https://localhost:54983;http://localhost:54984",
+      "launchUrl": "emergency-login"
     }
   }
 }

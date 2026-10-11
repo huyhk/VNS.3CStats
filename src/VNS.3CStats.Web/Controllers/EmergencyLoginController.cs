@@ -14,27 +14,21 @@ public sealed class EmergencyLoginController(IEmergencyLoginService emergencyLog
     [HttpGet("")]
     public IActionResult Index()
     {
-        var model = new EmergencyLoginViewModel();
         if (!emergencyLoginService.IsAvailable)
         {
-            ViewData["EmergencyLoginUnavailable"] = true;
+            return NotFound();
         }
 
-        return View(model);
+        return View(new EmergencyLoginViewModel());
     }
 
     [HttpPost("")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Index(EmergencyLoginViewModel model)
     {
-        if (!emergencyLoginService.IsAvailable)
+            if (!emergencyLoginService.IsAvailable)
         {
-            ModelState.AddModelError(
-                string.Empty,
-                "Emergency Login is not configured. Set EmergencyLogin__Enabled, EmergencyLogin__Username and EmergencyLogin__Password, then restart the application.");
-            model.Password = string.Empty;
-            ViewData["EmergencyLoginUnavailable"] = true;
-            return View(model);
+            return NotFound();
         }
 
         if (!ModelState.IsValid)
@@ -60,7 +54,7 @@ public sealed class EmergencyLoginController(IEmergencyLoginService emergencyLog
                 ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30)
             });
 
-        return Redirect("/admin/ingestion/ceb");
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpPost("logout")]
