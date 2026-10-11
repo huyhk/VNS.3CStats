@@ -24,12 +24,26 @@ public sealed class CebIngestionService(
     CebSourceClient sourceClient,
     CebPlayerParser playerParser,
     CebMatchParser matchParser,
-    PlayerIdentityResolver playerIdentityResolver)
+    PlayerIdentityResolver playerIdentityResolver,
+    PlayerIdentityImporter playerIdentityImporter)
 {
-    public async Task<CebIngestionResult> FetchAndParseAsync(
+    public Task<CebIngestionResult> FetchAndParseAsync(
         Uri url,
         string? externalId = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        FetchAsync(url, externalId, importPlayers: false, cancellationToken);
+
+    public Task<CebIngestionResult> FetchAndImportPlayersAsync(
+        Uri url,
+        string? externalId = null,
+        CancellationToken cancellationToken = default) =>
+        FetchAsync(url, externalId, importPlayers: true, cancellationToken);
+
+    private async Task<CebIngestionResult> FetchAsync(
+        Uri url,
+        string? externalId,
+        bool importPlayers,
+        CancellationToken cancellationToken)
     {
         var fetched = await sourceClient.FetchAsync(url, externalId, cancellationToken);
         var dataSource = await GetOrCreateDataSourceAsync(cancellationToken);
@@ -46,12 +60,15 @@ public sealed class CebIngestionService(
 
         foreach (var player in players)
         {
-            var resolution = await playerIdentityResolver.ResolveAsync(
-                dataSource.Id,
-                player.ExternalPlayerId,
-                player.SourceName,
-                player.CountryCode,
-                cancellationToken);
+            var resolution = importPlayers
+                ? await playerIdentityImporter.ImportAsync(dataSource.Id, player, cancellationToken)
+                : await playerIdentityResolver.ResolveAsync(
+                    dataSource.Id,
+                    player.ExternalPlayerId,
+                    player.SourceName,
+                    player.CountryCode,
+                    cancellationToken);
+
             resolutions.Add(new CebPlayerResolution(player, resolution));
         }
 
