@@ -52,8 +52,10 @@ public sealed class SourcePlayerIdentity
 {
     public long Id { get; set; }
     public long DataSourceId { get; set; }
-    public required string ExternalPlayerId { get; set; }
+    public string? ExternalPlayerId { get; set; }
     public required string SourceName { get; set; }
+    public required string NormalizedName { get; set; }
+    public string? CountryCode { get; set; }
     public long PlayerId { get; set; }
 
     public DataSource DataSource { get; set; } = null!;
