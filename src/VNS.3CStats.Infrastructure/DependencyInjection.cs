@@ -25,6 +25,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IEmergencyLoginService, EmergencyLoginService>();
         services.AddSingleton<CebMatchParser>();
+        services.AddSingleton<CebPlayerParser>();
         services.AddScoped<CebIngestionService>();
         services.AddHttpClient<CebSourceClient>(CebSourceClient.ConfigureHttpClient);
 
