@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddSingleton<CebMatchParser>();
         services.AddSingleton<CebPlayerParser>();
         services.AddScoped<PlayerIdentityResolver>();
+        services.AddScoped<PlayerIdentityImporter>();
         services.AddScoped<CebIngestionService>();
         services.AddHttpClient<CebSourceClient>(CebSourceClient.ConfigureHttpClient);
 
