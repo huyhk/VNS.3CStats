@@ -6,10 +6,17 @@
 
 <h1>CEB ingestion</h1>
 
-<p>Known integration event: <a href="@Model.EventUrl" target="_blank" rel="noopener">CEB event @Model.ExternalId</a></p>
-
-<form method="post" action="/admin/ingestion/ceb/verify-known-event">
+<form method="post" action="/admin/ingestion/ceb/verify-event">
     @Html.AntiForgeryToken()
+    <div asp-validation-summary="All"></div>
+    <p>
+        <label for="eventUrl">CEB event URL</label><br />
+        <input id="eventUrl" name="eventUrl" value="@Model.EventUrl" type="url" required style="width: 100%; max-width: 760px;" />
+    </p>
+    <p>
+        <label for="externalId">CEB event ID</label><br />
+        <input id="externalId" name="externalId" value="@Model.ExternalId" />
+    </p>
     <button type="submit">Fetch and parse event</button>
 </form>
 
@@ -20,6 +27,19 @@
     var ambiguousCount = Model.PlayerResolutions.Count(x => x.Resolution.Kind == PlayerIdentityResolutionKind.Ambiguous);
     var unresolvedCount = Model.PlayerResolutions.Count - resolvedCount - ambiguousCount;
 
+    @if (Model.Event is not null)
+    {
+        <h2>Event</h2>
+        <dl>
+            <dt>Name</dt><dd>@Model.Event.Name</dd>
+            <dt>Dates</dt><dd>@Model.Event.StartDate - @Model.Event.EndDate</dd>
+            <dt>Discipline</dt><dd>@Model.Event.Discipline</dd>
+            <dt>Venue</dt><dd>@Model.Event.Venue</dd>
+            <dt>City</dt><dd>@Model.Event.City</dd>
+            <dt>Country</dt><dd>@Model.Event.CountryName</dd>
+        </dl>
+    }
+
     <h2>Source document</h2>
     <dl>
         <dt>ID</dt><dd>@Model.SourceDocumentId</dd>
@@ -27,10 +47,7 @@
         <dt>Parser</dt><dd>@Model.ParserVersion</dd>
         <dt>SHA-256</dt><dd><code>@Model.ContentHash</code></dd>
         <dt>Players parsed</dt><dd>@Model.PlayerResolutions.Count</dd>
-        @if (Model.PlayersImported)
-        {
-            <dt>Created</dt><dd>@createdCount</dd>
-        }
+        @if (Model.PlayersImported) { <dt>Created</dt><dd>@createdCount</dd> }
         <dt>Resolved</dt><dd>@resolvedCount</dd>
         <dt>Ambiguous</dt><dd>@ambiguousCount</dd>
         <dt>Unresolved</dt><dd>@unresolvedCount</dd>
@@ -39,8 +56,10 @@
 
     @if (!Model.PlayersImported && unresolvedCount > 0)
     {
-        <form method="post" action="/admin/ingestion/ceb/import-known-event-players">
+        <form method="post" action="/admin/ingestion/ceb/import-event-players">
             @Html.AntiForgeryToken()
+            <input type="hidden" name="eventUrl" value="@Model.EventUrl" />
+            <input type="hidden" name="externalId" value="@Model.ExternalId" />
             <button type="submit">Import players</button>
         </form>
         <p>This creates canonical 3CStats players only for unambiguous identities. Ambiguous identities remain for review.</p>
@@ -48,8 +67,10 @@
 
     @if (unresolvedCount == 0 && ambiguousCount == 0 && Model.Matches.Count > 0)
     {
-        <form method="post" action="/admin/ingestion/ceb/import-known-event">
+        <form method="post" action="/admin/ingestion/ceb/import-event">
             @Html.AntiForgeryToken()
+            <input type="hidden" name="eventUrl" value="@Model.EventUrl" />
+            <input type="hidden" name="externalId" value="@Model.ExternalId" />
             <button type="submit">Import tournament and matches</button>
         </form>
     }
@@ -66,81 +87,34 @@
     }
 
     <h2>Parsed player identities</h2>
-    @if (Model.PlayerResolutions.Count == 0)
-    {
-        <p>No player identities were recognized.</p>
-    }
-    else
-    {
-        <table>
-            <thead>
-                <tr>
-                    <th>Source name</th>
-                    <th>Country</th>
-                    <th>Status</th>
-                    <th>3CStats Player</th>
-                    <th>Candidates</th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach (var playerResolution in Model.PlayerResolutions)
-            {
-                <tr>
-                    <td>@playerResolution.ParsedPlayer.SourceName</td>
-                    <td>@playerResolution.ParsedPlayer.CountryCode</td>
-                    <td>@playerResolution.Resolution.Kind</td>
-                    <td>
-                        @if (playerResolution.Resolution.Player is not null)
-                        {
-                            <text>#@playerResolution.Resolution.Player.Id @playerResolution.Resolution.Player.CanonicalName</text>
-                        }
-                    </td>
-                    <td>@playerResolution.Resolution.Candidates.Count</td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    }
+    <table>
+        <thead><tr><th>Source name</th><th>Country</th><th>Status</th><th>3CStats Player</th><th>Candidates</th></tr></thead>
+        <tbody>
+        @foreach (var playerResolution in Model.PlayerResolutions)
+        {
+            <tr>
+                <td>@playerResolution.ParsedPlayer.SourceName</td>
+                <td>@playerResolution.ParsedPlayer.CountryCode</td>
+                <td>@playerResolution.Resolution.Kind</td>
+                <td>@if (playerResolution.Resolution.Player is not null) { <text>#@playerResolution.Resolution.Player.Id @playerResolution.Resolution.Player.CanonicalName</text> }</td>
+                <td>@playerResolution.Resolution.Candidates.Count</td>
+            </tr>
+        }
+        </tbody>
+    </table>
 
     <h2>Parsed matches</h2>
-    @if (Model.Matches.Count == 0)
-    {
-        <p>No match rows were recognized.</p>
-    }
-    else
-    {
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Date</th>
-                    <th>Stage</th>
-                    <th>Group</th>
-                    <th>Player 1</th>
-                    <th>Score</th>
-                    <th>Player 2</th>
-                    <th>Inn.</th>
-                    <th>Avg.</th>
-                    <th>HR</th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach (var matchItem in Model.Matches)
-            {
-                <tr>
-                    <td>@matchItem.MatchNumber</td>
-                    <td>@matchItem.PlayedAt</td>
-                    <td>@matchItem.Stage</td>
-                    <td>@matchItem.Group</td>
-                    <td>@matchItem.Player1.SourceName</td>
-                    <td>@matchItem.Player1Score - @matchItem.Player2Score</td>
-                    <td>@matchItem.Player2.SourceName</td>
-                    <td>@matchItem.Player1Innings / @matchItem.Player2Innings</td>
-                    <td>@matchItem.Player1Average / @matchItem.Player2Average</td>
-                    <td>@matchItem.Player1HighRun / @matchItem.Player2HighRun</td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    }
+    <table>
+        <thead><tr><th>#</th><th>Date</th><th>Stage</th><th>Group</th><th>Player 1</th><th>Score</th><th>Player 2</th><th>Inn.</th><th>Avg.</th><th>HR</th></tr></thead>
+        <tbody>
+        @foreach (var matchItem in Model.Matches)
+        {
+            <tr>
+                <td>@matchItem.MatchNumber</td><td>@matchItem.PlayedAt</td><td>@matchItem.Stage</td><td>@matchItem.Group</td>
+                <td>@matchItem.Player1.SourceName</td><td>@matchItem.Player1Score - @matchItem.Player2Score</td><td>@matchItem.Player2.SourceName</td>
+                <td>@matchItem.Player1Innings / @matchItem.Player2Innings</td><td>@matchItem.Player1Average / @matchItem.Player2Average</td><td>@matchItem.Player1HighRun / @matchItem.Player2HighRun</td>
+            </tr>
+        }
+        </tbody>
+    </table>
 }
