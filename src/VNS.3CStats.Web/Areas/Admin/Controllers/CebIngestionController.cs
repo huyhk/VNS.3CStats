@@ -34,6 +34,7 @@ public sealed class CebIngestionController(CebIngestionService ingestionService)
             RetrievedAt = result.SourceDocument.RetrievedAt,
             ContentHash = result.SourceDocument.ContentHash,
             ParserVersion = result.SourceDocument.ParserVersion,
+            Players = result.Players,
             Matches = result.Matches
         });
     }
