@@ -52,7 +52,7 @@ public sealed class CebIngestionController(
             CebKnownEvents.EuropeanChampionship3CushionU25_2025ExternalId,
             cancellationToken);
 
-        var canonicalImport = await canonicalImporter.ImportKnownU25EventAsync(
+        var canonicalImport = await canonicalImporter.ImportAsync(
             ingestion,
             cancellationToken);
 
