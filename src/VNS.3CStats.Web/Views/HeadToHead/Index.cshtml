@@ -1,0 +1,91 @@
+@model VNS.ThreeCStats.Web.Controllers.HeadToHeadViewModel
+@{
+    ViewData["Title"] = "Head to Head";
+}
+
+<h1>Head to Head</h1>
+
+<form method="get" action="/h2h">
+    <label for="player1">Player 1</label>
+    <select id="player1" name="player1" required>
+        <option value="">Select player</option>
+        @foreach (var playerItem in Model.Players)
+        {
+            if (Model.Player1Id == playerItem.Id)
+            {
+                <option value="@playerItem.Id" selected>@playerItem.Name (@playerItem.CountryCode)</option>
+            }
+            else
+            {
+                <option value="@playerItem.Id">@playerItem.Name (@playerItem.CountryCode)</option>
+            }
+        }
+    </select>
+
+    <label for="player2">Player 2</label>
+    <select id="player2" name="player2" required>
+        <option value="">Select player</option>
+        @foreach (var playerItem in Model.Players)
+        {
+            if (Model.Player2Id == playerItem.Id)
+            {
+                <option value="@playerItem.Id" selected>@playerItem.Name (@playerItem.CountryCode)</option>
+            }
+            else
+            {
+                <option value="@playerItem.Id">@playerItem.Name (@playerItem.CountryCode)</option>
+            }
+        }
+    </select>
+
+    <button type="submit">Compare</button>
+</form>
+
+@if (Model.Player1Id.HasValue && Model.Player1Id == Model.Player2Id)
+{
+    <p>Please select two different players.</p>
+}
+
+@if (Model.Result is not null)
+{
+    <h2>@Model.Result.Player1Name vs @Model.Result.Player2Name</h2>
+    <p>Total matches: @Model.Result.TotalMatches</p>
+    <p>
+        @Model.Result.Player1Name wins: @Model.Result.Player1Wins |
+        @Model.Result.Player2Name wins: @Model.Result.Player2Wins |
+        Draws: @Model.Result.Draws
+    </p>
+
+    @if (Model.Result.Matches.Count == 0)
+    {
+        <p>No matches found between these players.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Tournament</th>
+                    <th>Stage</th>
+                    <th>Player 1</th>
+                    <th>Score</th>
+                    <th>Player 2</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var matchItem in Model.Result.Matches)
+            {
+                <tr>
+                    <td>@matchItem.PlayedAt</td>
+                    <td><a href="/tournaments/@matchItem.TournamentId">@matchItem.TournamentName</a></td>
+                    <td>@matchItem.Stage</td>
+                    <td><a href="/players/@matchItem.Player1Id">@matchItem.Player1Name</a></td>
+                    <td>@matchItem.Player1Score - @matchItem.Player2Score</td>
+                    <td><a href="/players/@matchItem.Player2Id">@matchItem.Player2Name</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+}
