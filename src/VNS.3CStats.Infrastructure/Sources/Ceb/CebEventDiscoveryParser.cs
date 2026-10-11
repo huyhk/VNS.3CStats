@@ -45,6 +45,12 @@ public sealed partial class CebEventDiscoveryParser
             var cells = row?.Elements("td").ToArray() ?? [];
             var dates = row is null ? [] : DateRegex().Matches(NormalizeText(row.InnerText)).Select(x => ParseDate(x.Value)).ToArray();
             var discipline = cells.Length >= 4 ? NullIfEmpty(NormalizeText(cells[^4].InnerText)) : null;
+
+            if (!IsThreeCushion(discipline, name))
+            {
+                continue;
+            }
+
             var location = cells.Length > 0 ? NullIfEmpty(NormalizeText(cells[^1].InnerText)) : null;
 
             results[externalId] = new DiscoveredCebEvent(
@@ -58,6 +64,20 @@ public sealed partial class CebEventDiscoveryParser
         }
 
         return results.Values.ToArray();
+    }
+
+    private static bool IsThreeCushion(string? discipline, string eventName)
+    {
+        if (!string.IsNullOrWhiteSpace(discipline))
+        {
+            var normalized = NormalizeText(discipline);
+            return normalized.Contains("3-cushion", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("3 cushion", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("3C", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return eventName.Contains("3-cushion", StringComparison.OrdinalIgnoreCase)
+            || eventName.Contains("3 cushion", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool TryCreateEventUri(string href, out Uri uri, out string externalId)
