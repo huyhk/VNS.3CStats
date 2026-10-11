@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<PlayerIdentityResolver>();
         services.AddScoped<PlayerIdentityImporter>();
         services.AddScoped<CebIngestionService>();
+        services.AddScoped<CebCanonicalImporter>();
         services.AddHttpClient<CebSourceClient>(CebSourceClient.ConfigureHttpClient);
 
         var connectionString = configuration.GetConnectionString("DefaultConnection")
