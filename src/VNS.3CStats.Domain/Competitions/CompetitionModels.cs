@@ -47,7 +47,7 @@ public sealed class Match
 {
     public long Id { get; set; }
     public long TournamentId { get; set; }
-    public DateTimeOffset? PlayedAt { get; set; }
+    public DateTime? PlayedAt { get; set; }
     public string? Stage { get; set; }
     public string? Group { get; set; }
     public int? MatchNumber { get; set; }
