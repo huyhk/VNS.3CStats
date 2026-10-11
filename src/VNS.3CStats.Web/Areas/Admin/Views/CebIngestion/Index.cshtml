@@ -14,18 +14,25 @@
 
 @if (Model.SourceDocumentId.HasValue)
 {
+    var resolvedCount = Model.PlayerResolutions.Count(x => x.Resolution.IsResolved);
+    var ambiguousCount = Model.PlayerResolutions.Count(x => x.Resolution.Kind == VNS.ThreeCStats.Infrastructure.Normalization.PlayerIdentityResolutionKind.Ambiguous);
+    var unresolvedCount = Model.PlayerResolutions.Count - resolvedCount - ambiguousCount;
+
     <h2>Source document</h2>
     <dl>
         <dt>ID</dt><dd>@Model.SourceDocumentId</dd>
         <dt>Retrieved</dt><dd>@Model.RetrievedAt</dd>
         <dt>Parser</dt><dd>@Model.ParserVersion</dd>
         <dt>SHA-256</dt><dd><code>@Model.ContentHash</code></dd>
-        <dt>Players parsed</dt><dd>@Model.Players.Count</dd>
+        <dt>Players parsed</dt><dd>@Model.PlayerResolutions.Count</dd>
+        <dt>Resolved</dt><dd>@resolvedCount</dd>
+        <dt>Ambiguous</dt><dd>@ambiguousCount</dd>
+        <dt>Unresolved</dt><dd>@unresolvedCount</dd>
         <dt>Matches parsed</dt><dd>@Model.Matches.Count</dd>
     </dl>
 
     <h2>Parsed player identities</h2>
-    @if (Model.Players.Count == 0)
+    @if (Model.PlayerResolutions.Count == 0)
     {
         <p>No player identities were recognized.</p>
     }
@@ -34,18 +41,27 @@
         <table>
             <thead>
                 <tr>
-                    <th>CEB ID</th>
                     <th>Source name</th>
                     <th>Country</th>
+                    <th>Status</th>
+                    <th>3CStats Player</th>
+                    <th>Candidates</th>
                 </tr>
             </thead>
             <tbody>
-            @foreach (var playerItem in Model.Players)
+            @foreach (var playerResolution in Model.PlayerResolutions)
             {
                 <tr>
-                    <td><code>@playerItem.ExternalPlayerId</code></td>
-                    <td>@playerItem.SourceName</td>
-                    <td>@playerItem.CountryCode</td>
+                    <td>@playerResolution.ParsedPlayer.SourceName</td>
+                    <td>@playerResolution.ParsedPlayer.CountryCode</td>
+                    <td>@playerResolution.Resolution.Kind</td>
+                    <td>
+                        @if (playerResolution.Resolution.Player is not null)
+                        {
+                            <text>#@playerResolution.Resolution.Player.Id @playerResolution.Resolution.Player.CanonicalName</text>
+                        }
+                    </td>
+                    <td>@playerResolution.Resolution.Candidates.Count</td>
                 </tr>
             }
             </tbody>
