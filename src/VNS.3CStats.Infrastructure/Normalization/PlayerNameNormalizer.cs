@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -10,6 +9,9 @@ public static partial class PlayerNameNormalizer
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
+        // Keep diacritics and scripts intact. Normalization is deliberately
+        // conservative: punctuation variants and whitespace are safe to fold,
+        // while accent removal or token reordering belongs in candidate matching.
         var normalized = name.Normalize(NormalizationForm.FormKC)
             .Replace('\u2018', '\'')
             .Replace('\u2019', '\'')
@@ -17,22 +19,7 @@ public static partial class PlayerNameNormalizer
             .Replace('\u0060', '\'')
             .ToUpperInvariant();
 
-        var builder = new StringBuilder(normalized.Length);
-        foreach (var character in normalized)
-        {
-            var category = CharUnicodeInfo.GetUnicodeCategory(character);
-            if (category is UnicodeCategory.NonSpacingMark
-                or UnicodeCategory.SpacingCombiningMark
-                or UnicodeCategory.EnclosingMark)
-            {
-                continue;
-            }
-
-            builder.Append(character);
-        }
-
-        normalized = WhitespaceRegex().Replace(builder.ToString(), " ").Trim();
-        return normalized;
+        return WhitespaceRegex().Replace(normalized, " ").Trim();
     }
 
     [GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]
