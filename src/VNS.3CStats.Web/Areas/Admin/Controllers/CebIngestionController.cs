@@ -9,7 +9,9 @@ namespace VNS.ThreeCStats.Web.Areas.Admin.Controllers;
 [Area("Admin")]
 [Authorize(Policy = DependencyInjection.SuperAdminPolicy)]
 [Route("admin/ingestion/ceb")]
-public sealed class CebIngestionController(CebIngestionService ingestionService) : Controller
+public sealed class CebIngestionController(
+    CebIngestionService ingestionService,
+    CebCanonicalImporter canonicalImporter) : Controller
 {
     [HttpGet("")]
     public IActionResult Index()
@@ -41,9 +43,29 @@ public sealed class CebIngestionController(CebIngestionService ingestionService)
         return View("Index", CreateResultModel(result, playersImported: true));
     }
 
+    [HttpPost("import-known-event")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ImportKnownEvent(CancellationToken cancellationToken)
+    {
+        var ingestion = await ingestionService.FetchAndParseAsync(
+            new Uri(CebKnownEvents.EuropeanChampionship3CushionU25_2025),
+            CebKnownEvents.EuropeanChampionship3CushionU25_2025ExternalId,
+            cancellationToken);
+
+        var canonicalImport = await canonicalImporter.ImportKnownU25EventAsync(
+            ingestion,
+            cancellationToken);
+
+        return View("Index", CreateResultModel(
+            ingestion,
+            playersImported: false,
+            canonicalImport));
+    }
+
     private static CebIngestionViewModel CreateResultModel(
         CebIngestionResult result,
-        bool playersImported) => new()
+        bool playersImported,
+        CebCanonicalImportResult? canonicalImport = null) => new()
     {
         EventUrl = result.SourceDocument.Url,
         ExternalId = result.SourceDocument.ExternalId ?? string.Empty,
@@ -53,7 +75,8 @@ public sealed class CebIngestionController(CebIngestionService ingestionService)
         ParserVersion = result.SourceDocument.ParserVersion,
         PlayerResolutions = result.PlayerResolutions,
         Matches = result.Matches,
-        PlayersImported = playersImported
+        PlayersImported = playersImported,
+        CanonicalImport = canonicalImport
     };
 
     private static CebIngestionViewModel CreateEmptyModel() => new()
