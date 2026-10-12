@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<PlayerIdentityImporter>();
         services.AddScoped<CebIngestionService>();
         services.AddScoped<CebCanonicalImporter>();
+        services.AddScoped<CebCrawlPolicy>();
         services.AddScoped<CebCrawler>();
         services.AddHttpClient<CebSourceClient>(CebSourceClient.ConfigureHttpClient);
         services.AddHttpClient<CebEventDiscoveryClient>(CebEventDiscoveryClient.ConfigureHttpClient);
