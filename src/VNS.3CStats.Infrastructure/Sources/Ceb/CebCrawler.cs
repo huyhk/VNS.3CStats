@@ -5,10 +5,12 @@ namespace VNS.ThreeCStats.Infrastructure.Sources.Ceb;
 public sealed record CebCrawlEventResult(
     DiscoveredCebEvent Event,
     bool Imported,
+    bool Skipped,
     int CreatedPlayers,
     int CreatedMatches,
     int ExistingMatches,
     int UnresolvedMatches,
+    string? Message,
     string? Error);
 
 public sealed record CebCrawlResult(
@@ -17,6 +19,7 @@ public sealed record CebCrawlResult(
 
 public sealed class CebCrawler(
     CebEventDiscoveryClient discoveryClient,
+    CebCrawlPolicy crawlPolicy,
     CebIngestionService ingestionService,
     CebCanonicalImporter canonicalImporter)
 {
@@ -24,6 +27,7 @@ public sealed class CebCrawler(
     {
         var discovered = await discoveryClient.DiscoverAsync(cancellationToken);
         var results = new List<CebCrawlEventResult>(discovered.Count);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         foreach (var discoveredEvent in discovered.OrderBy(x => x.StartDate).ThenBy(x => x.ExternalId, StringComparer.Ordinal))
         {
@@ -31,6 +35,22 @@ public sealed class CebCrawler(
 
             try
             {
+                var decision = await crawlPolicy.DecideAsync(discoveredEvent, today, cancellationToken);
+                if (!decision.ShouldCrawl)
+                {
+                    results.Add(new CebCrawlEventResult(
+                        discoveredEvent,
+                        false,
+                        true,
+                        0,
+                        0,
+                        0,
+                        0,
+                        decision.Reason,
+                        null));
+                    continue;
+                }
+
                 var ingestion = await ingestionService.FetchAndParseAsync(
                     discoveredEvent.Url,
                     discoveredEvent.ExternalId,
@@ -52,10 +72,12 @@ public sealed class CebCrawler(
                 results.Add(new CebCrawlEventResult(
                     discoveredEvent,
                     true,
+                    false,
                     createdPlayers,
                     canonical.CreatedMatches,
                     canonical.ExistingMatches,
                     canonical.UnresolvedMatches,
+                    decision.Reason,
                     null));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -63,10 +85,12 @@ public sealed class CebCrawler(
                 results.Add(new CebCrawlEventResult(
                     discoveredEvent,
                     false,
+                    false,
                     0,
                     0,
                     0,
                     0,
+                    null,
                     ex.Message));
             }
         }
